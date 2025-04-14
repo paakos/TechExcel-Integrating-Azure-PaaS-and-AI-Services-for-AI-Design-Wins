@@ -70,7 +70,8 @@ app.UseHttpsRedirection();
 // This endpoint serves as the default landing page for the API.
 app.MapGet("/", async () => 
 {
-    return "Welcome to the Contoso Suites Web API!";
+    var hotels = await app.Services.GetRequiredService<IDatabaseService>().GetHotels();
+    return hotels;
 })
     .WithName("Index")
     .WithOpenApi();
