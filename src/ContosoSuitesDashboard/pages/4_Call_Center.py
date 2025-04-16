@@ -105,8 +105,7 @@ def make_azure_openai_chat_request(system, call_contents):
 @st.cache_data
 def is_call_in_compliance(call_contents, include_recording_message, is_relevant_to_topic):
     """Analyze a call for relevance and compliance."""
-    """Analyze a call for relevance and compliance."""
-
+    
     joined_call_contents = ' '.join(call_contents)
     if include_recording_message:
         include_recording_message_text = "2. Was the caller aware that the call was being recorded?"
