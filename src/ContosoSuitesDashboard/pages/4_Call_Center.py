@@ -355,7 +355,23 @@ def make_azure_openai_embedding_request(text):
     """Create and return a new embedding request. Key assumptions:
     - Azure OpenAI endpoint, key, and deployment name stored in Streamlit secrets."""
 
-    return "This is a placeholder result. Fill in with real embedding."
+    #return "This is a placeholder result. Fill in with real embedding."
+    token_provider = get_bearer_token_provider(
+        DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
+    )
+    aoai_endpoint = st.secrets["aoai"]["endpoint"]
+    aoai_embedding_deployment_name = st.secrets["aoai"]["embedding_deployment_name"]
+
+    client = openai.AzureOpenAI(
+        azure_ad_token_provider=token_provider,
+        api_version="2024-06-01",
+        azure_endpoint = aoai_endpoint
+    )
+    # Create and return a new embedding request
+    return client.embeddings.create(
+        model=aoai_embedding_deployment_name,
+        input=text
+    )
 
 def normalize_text(s):
     """Normalize text for tokenization."""
@@ -376,8 +392,13 @@ def generate_embeddings_for_call_contents(call_contents):
     - Azure OpenAI endpoint, key, and deployment name stored in Streamlit secrets."""
 
     # Normalize the text for tokenization
+    normalized_content = normalize_text(call_contents)
+
     # Call make_azure_openai_embedding_request() with the normalized content
+    response = make_azure_openai_embedding_request(normalized_content)
+
     # Return the embeddings
+    return response.data[0].embedding
 
     return [0, 0, 0]
 
@@ -387,6 +408,7 @@ def save_transcript_to_cosmos_db(transcript_item):
         call_transcript (string), and request_vector (list).
     - Cosmos DB endpoint, client_id, and database name stored in Streamlit secrets."""
 
+
     cosmos_client_id = st.secrets["cosmos"]["client_id"]
     cosmos_credentials = DefaultAzureCredential(managed_identity_client_id=cosmos_client_id)
 
@@ -395,8 +417,14 @@ def save_transcript_to_cosmos_db(transcript_item):
     cosmos_container_name = "CallTranscripts"
 
     # Create a CosmosClient
+    client = CosmosClient(url=cosmos_endpoint, credential=cosmos_credentials)
+
     # Load the Cosmos database and container
+    database = client.get_database_client(cosmos_database_name)
+    container = database.get_container_client(cosmos_container_name)
+
     # Insert the call transcript
+    container.create_item(body=transcript_item)
 
 ####################### HELPER FUNCTIONS FOR MAIN() #######################
 def perform_audio_transcription(uploaded_file):
